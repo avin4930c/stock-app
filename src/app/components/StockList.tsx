@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { FaSearch, FaSortAlphaDown, FaSortAlphaUp, FaSortAmountUp, FaSortAmountDown } from 'react-icons/fa';
+import { FaSearch, FaSortAlphaDown, FaSortAlphaUp, FaSortAmountUp, FaSortAmountDown, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { StockData } from '../api/stockService';
 import StockCard from './StockCard';
 
@@ -17,6 +17,8 @@ const StockList: React.FC<StockListProps> = ({ stocks, title }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15; // Number of stocks per page
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -54,10 +56,32 @@ const StockList: React.FC<StockListProps> = ({ stocks, title }) => {
     });
   }, [stocks, searchTerm, sortField, sortDirection]);
 
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredAndSortedStocks.length / itemsPerPage);
+  
+  // Get current page data
+  const currentData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedStocks.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedStocks, currentPage]);
+
+  // Page navigation handlers
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+  const goToPreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       <div className="container mx-auto py-6 px-4">
-        <h1 className="text-2xl font-bold mb-6">{title}</h1>
+        {title && <h1 className="text-2xl font-bold mb-6">{title}</h1>}
 
         {/* Search and Sort Controls */}
         <div className="mb-6">
@@ -135,10 +159,15 @@ const StockList: React.FC<StockListProps> = ({ stocks, title }) => {
           </div>
         </div>
 
+        {/* Stock counts and totals */}
+        <div className="mb-4 text-sm text-gray-500">
+          Showing {filteredAndSortedStocks.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filteredAndSortedStocks.length)} of ` : ''}{filteredAndSortedStocks.length} stock{filteredAndSortedStocks.length !== 1 ? 's' : ''}
+        </div>
+
         {/* Stock List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedStocks.length > 0 ? (
-            filteredAndSortedStocks.map((stock) => (
+          {currentData.length > 0 ? (
+            currentData.map((stock) => (
               <StockCard key={stock.symbol} stock={stock} />
             ))
           ) : (
@@ -147,6 +176,53 @@ const StockList: React.FC<StockListProps> = ({ stocks, title }) => {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <nav className="flex items-center space-x-2">
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className={`p-2 rounded-md ${
+                  currentPage === 1 
+                    ? 'text-gray-400 cursor-not-allowed' 
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <FaChevronLeft className="h-5 w-5" />
+              </button>
+              
+              <div className="flex space-x-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    className={`px-3 py-1 rounded-md ${
+                      page === currentPage 
+                        ? 'bg-indigo-600 text-white' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className={`p-2 rounded-md ${
+                  currentPage === totalPages 
+                    ? 'text-gray-400 cursor-not-allowed' 
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <FaChevronRight className="h-5 w-5" />
+              </button>
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );

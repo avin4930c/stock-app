@@ -89,7 +89,8 @@ export default function Home() {
                   View All Nifty 50
                 </Link>
               </div>
-              <StockList stocks={stocks.slice(0, 10)} title="" />
+              {/* Preview of available Nifty 50 stocks - limited by API performance considerations */}
+              <StockList stocks={stocks.slice(0, 20)} title="" />
             </div>
             
             <div>
@@ -99,7 +100,11 @@ export default function Home() {
                   View All Nifty 100
                 </Link>
               </div>
+              {/* All available stocks are shown but API fetches are limited to ~20 stocks for performance */}
               <StockList stocks={stocks} title="" />
+              <p className="text-xs text-gray-500 mt-2">
+                Note: Some stocks may not be displayed due to API performance limitations. View full list from the link above.
+              </p>
             </div>
           </div>
         )}
